@@ -19,9 +19,9 @@ import robocode.ScannedRobotEvent;
  */
 public class Atom extends AdvancedRobot {
 
-    private byte scanDirection = 1;
+    //private byte scanDirection = 1;
     private double RadarDirection;
-    private double GunDirection;
+    //private double GunDirection;
 
     public void run() {
         setTurnLeft(getHeading());
@@ -41,17 +41,18 @@ public class Atom extends AdvancedRobot {
         setTurnRadarRight(RadarDirection); //hacemos la diferencia entre el rumbo de nuestro tanque ( getHeading () ) y el rumbo de nuestro radar ( getRadarHeading () ) y agregamos el rumbo al robot escaneado ( event.getBearing () ) 
         //GunDirection = RadarDirection * (Math.PI/180);
         //getGunHeadingRadians();
-        //fire(Rules.MAX_BULLET_POWER);
+        fire(Rules.MAX_BULLET_POWER);
+        execute();
        
     }
     public void onHitByBullet(HitByBulletEvent event) {
         setTurnLeft(180);
-    }
+    } /*
     public void onHitWall(HitWallEvent e){
         double bearing = e.getBearing(); //get the bearing of the wall
         setTurnRight(-bearing); //This isn't accurate but release your robot.
-        setAhead(100); //The robot goes away from the wall.
+        setBack(100); //The robot goes away from the wall.
         execute();
-    }
+    }*/
     
 }
