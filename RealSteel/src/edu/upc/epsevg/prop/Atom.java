@@ -1,34 +1,44 @@
+package edu.upc.epsevg.prop;
+
+import robocode.HitByBulletEvent;
+import robocode.Robot;
+import robocode.AdvancedRobot;
+import robocode.Rules;
+import robocode.ScannedRobotEvent;
+
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 
-package edu.upc.epsevg.prop;
-
-import robocode.HitByBulletEvent;
-import robocode.Robot;
-import robocode.Rules;
-import robocode.ScannedRobotEvent;
-
 /**
  *
  * @author aibar
  */
+public class Atom extends AdvancedRobot {
 
+    private byte scanDirection = 1;
 
-public class Atom extends Robot {
     public void run() {
-        turnLeft(getHeading());
+        setTurnLeft(getHeading());
+        setAdjustGunForRobotTurn (true);       //activamos el cañon del robot
+        setAdjustRadarForRobotTurn(true);      //activamos el radar del robot
         while(true) {
-            ahead(1000);
-            turnRight(90);
+            setAhead(1000);                    //hacer que se mueva
+            setTurnRadarRight (360);      //girar el radar en sentido positivo
+            execute();
         }
     }
+   
     public void onScannedRobot(ScannedRobotEvent event) {
-        //fire(1);
-        fire(Rules.MAX_BULLET_POWER);
+        scanDirection *= -1;
+        setTurnRadarRight(1000 * scanDirection);
+        //fire(Rules.MAX_BULLET_POWER);
+        execute();
     }
     public void onHitByBullet(HitByBulletEvent event) {
-        turnLeft(180);
+        setTurnLeft(180);
     }
+
 }
