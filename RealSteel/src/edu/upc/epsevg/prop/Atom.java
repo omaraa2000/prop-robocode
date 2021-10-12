@@ -3,6 +3,7 @@ package edu.upc.epsevg.prop;
 import robocode.HitByBulletEvent;
 import robocode.Robot;
 import robocode.AdvancedRobot;
+import robocode.HitWallEvent;
 import robocode.Rules;
 import robocode.ScannedRobotEvent;
 
@@ -38,13 +39,19 @@ public class Atom extends AdvancedRobot {
         //setTurnRadarRight(1000 * scanDirection);
         RadarDirection = (getHeading() - getRadarHeading() + event.getBearing());
         setTurnRadarRight(RadarDirection); //hacemos la diferencia entre el rumbo de nuestro tanque ( getHeading () ) y el rumbo de nuestro radar ( getRadarHeading () ) y agregamos el rumbo al robot escaneado ( event.getBearing () ) 
-        GunDirection = RadarDirection * (math.PI/180);
-        getGunHeadingRadians(GunDirection);
-        fire(Rules.MAX_BULLET_POWER);
-        execute();
+        //GunDirection = RadarDirection * (Math.PI/180);
+        //getGunHeadingRadians();
+        //fire(Rules.MAX_BULLET_POWER);
+       
     }
     public void onHitByBullet(HitByBulletEvent event) {
         setTurnLeft(180);
     }
-
+    public void onHitWall(HitWallEvent e){
+        double bearing = e.getBearing(); //get the bearing of the wall
+        setTurnRight(-bearing); //This isn't accurate but release your robot.
+        setAhead(100); //The robot goes away from the wall.
+        execute();
+    }
+    
 }
