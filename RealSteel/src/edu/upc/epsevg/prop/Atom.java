@@ -24,11 +24,11 @@ public class Atom extends AdvancedRobot {
     //private byte scanDirection = 1;
     private double RadarDirection;
     private double GunDirection;
-    private int wallMargin = 80;
-    private int tooCloseToWall = 0;
+    //private int wallMargin = 80;
+    //private int tooCloseToWall = 0;
     private int moveDirection = 1;
-    private boolean CloseWall = false;
-    private int AvoidWall = 0;
+    //private boolean CloseWall = false;
+    //private int AvoidWall = 0;
     
     public void run() {
         setBodyColor(new Color(93, 193, 185));
@@ -38,16 +38,16 @@ public class Atom extends AdvancedRobot {
         setAdjustGunForRobotTurn (true);       //activamos el cañon del robot
         setAdjustRadarForRobotTurn(true);      //activamos el radar del robot
         while(true) {
-            //setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
-            CloseWall = nearWall();
-            move();
+            setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
+            //CloseWall = nearWall();
+            //move();
             //setTurnLeft(90);
-            setTurnRadarRight (360);        //girar el radar 360
+            setTurnRadarRight (10000);        //girar el radar 360
             execute();
         }
     }
 
-
+    /*
     public boolean nearWall() {
             return (
                 // we're too close to the left wall
@@ -75,7 +75,7 @@ public class Atom extends AdvancedRobot {
             AvoidWall=0;
         }
    
-    }
+    }*/
    
 
     public void onScannedRobot(ScannedRobotEvent event) {
@@ -86,20 +86,45 @@ public class Atom extends AdvancedRobot {
         
         GunDirection = (getHeading() - getGunHeading() + event.getBearing ());
         setTurnGunRight(GunDirection);
-        fire(Rules.MAX_BULLET_POWER);
-
-
-
+        if (getGunHeat() == 0 && Math.abs (getGunTurnRemaining())<10) {
+            PotenciaDisparo(event);
+        }
+        //fire(Rules.MAX_BULLET_POWER);
         execute();
        
     }
     public void onHitByBullet(HitByBulletEvent event) {
         setTurnLeft(180);
     } 
-    /*
+
+    public void PotenciaDisparo (ScannedRobotEvent event) {
+        double distance = event.getDistance();
+            if(distance<200) {
+              fire(3.5);
+              setBulletColor(new Color (255, 0, 0));
+           }
+           else if(distance<500) {
+              fire(2.5);
+              setBulletColor(new Color (255, 128, 0));
+           }
+           else if(distance<800) {
+              fire(1.5);
+              setBulletColor(new Color (255, 233, 0));
+           }
+           else {
+              fire(0.5);
+              setBulletColor(new Color (255, 255, 255));
+              
+           }
+    }
+        
+    
+
+
+    
     public void onHitWall(HitWallEvent event){
         if (event.getBearing() > -90 && event.getBearing() <= 90) {
-           setBack(1800);
+           setBack(180);
            setTurnLeft(180);
        } else {
            setAhead(180);
@@ -108,8 +133,8 @@ public class Atom extends AdvancedRobot {
         double bearing = e.getBearing(); //get the bearing of the wall
         setTurnRight(-bearing); //This isn't accurate but release your robot.
         setBack(100); //The robot goes away from the wall.
-        
+        */
         execute();
-    }*/
+    }
     
 }
