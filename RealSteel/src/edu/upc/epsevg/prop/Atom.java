@@ -21,111 +21,71 @@ import java.awt.Color;
  */
 public class Atom extends AdvancedRobot {
 
-    //private byte scanDirection = 1;
-    private double RadarDirection = 1.0;
-    private double GunDirection;
-    //private int wallMargin = 80;
-    //private int tooCloseToWall = 0;
-    private int moveDirection = 1;
-    //private boolean CloseWall = false;
-    //private int AvoidWall = 0;
-    
-    private int enemigoX = 0;
-    private int enemigoY = 0;
+    private byte RadarDirection = 1;
+    //private double GunDirection;
+
+    private byte moveDirection = 1;
+    private double enemigoX = 0;
+    private double enemigoY = 0;
 
     
     public void run() {
-        setBodyColor(new Color(93, 193, 185));
-        setGunColor(new Color (247, 191, 190));
-        setRadarColor(new Color (255, 255, 255));
+        
         setTurnLeft(getHeading());
         setAdjustGunForRobotTurn (true);       //activamos el cañon del robot
         setAdjustRadarForRobotTurn(true);      //activamos el radar del robot
+        
+        setBodyColor(new Color(93, 193, 185));
+        setGunColor(new Color (247, 191, 190));
+        setRadarColor(new Color (255, 255, 255));
+        
         while(true) {
-            setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
-            //CloseWall = nearWall();
-            //move();
-            //setTurnLeft(90);
-            setTurnRadarRight (10000);        //girar el radar 360
-            execute();
+           setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
+           setTurnRadarRight (10000);        //girar el radar 360
+           execute(); 
+            
         }
     }
 
-    /*
-    public boolean nearWall() {
-            return (
-                // we're too close to the left wall
-                (getX() <= wallMargin ||
-                 // or we're too close to the right wall
-                 getX() >= getBattleFieldWidth() - wallMargin ||
-                 // or we're too close to the bottom wall
-                 getY() <= wallMargin ||
-                 // or we're too close to the top wall
-                 getY() >= getBattleFieldHeight() - wallMargin)
-            );
-    }
-  
-    public void move() {
-        if (CloseWall) {
-            if (AvoidWall==0) {
-                moveDirection*=-1;
-                AvoidWall++;
-            }
-            setAhead(1000 * moveDirection);
-        }
-        else {
-            setAhead(1000 * moveDirection);
-            setTurnLeft(90);
-            AvoidWall=0;
-        }
-   
-    }*/
-   
 
     public void onScannedRobot(ScannedRobotEvent event) {
-        //scanDirection *= -1;
+        setStop(true);
+        execute();
         //setTurnRadarRight(1000 * scanDirection);
-        RadarDirection = (getHeading() - getRadarHeading() + event.getBearing());
-        setTurnRadarRight(RadarDirection); //hacemos la diferencia entre el rumbo de nuestro tanque ( getHeading () ) y el rumbo de nuestro radar ( getRadarHeading () ) y agregamos el rumbo al robot escaneado ( event.getBearing () ) 
-        
+        setTurnRadarRight(getHeading() - getRadarHeading() + event.getBearing()); //hacemos la diferencia entre el rumbo de nuestro tanque ( getHeading () ) y el rumbo de nuestro radar ( getRadarHeading () ) y agregamos el rumbo al robot escaneado ( event.getBearing () ) 
         //GunDirection = (getHeading() - getGunHeading() + event.getBearing ());
         //setTurnGunRight(GunDirection);
         Disparar(event);
-
         //setTurnRight (event.getBearing () + 90);
-        if (getGunHeat() == 0 && Math.abs (getGunTurnRemaining())<10) {
-            PotenciaDisparo(event);
-        }
         //fire(Rules.MAX_BULLET_POWER);
-        execute();
-       
+        
     }
+    
+    //Evento para cuando choca con una bala
     public void onHitByBullet(HitByBulletEvent event) {
         setTurnLeft(180);
     } 
     
+    //Funcion que permite diparar teniendo en cuenta la posicion futura del enemigo
     public void Disparar(ScannedRobotEvent event) {
-         double tiempo = TiempoBala(event);
-         double xEnemiga = FuturaXenemigo(tiempo, event);
-         double yEnemiga = FuturaYenemigo(tiempo, event);
+         double time = TiempoBala(event);
+         PosicionActualEnemigo(event.getBearing(), event.getDistance());
+         double xEnemiga = FuturaXenemigo(time, event);
+         double yEnemiga = FuturaYenemigo(time, event);
          double anguloGiro = AnguloAbsolutoEnemigo(getX(), getY(), xEnemiga, yEnemiga);
          setTurnGunRight(normalizeBearing(anguloGiro - getGunHeading()));
          if (getGunHeat() == 0 && Math.abs(getGunTurnRemaining()) < 10) {
-            
-            double potencia = 500 / event.getDistance();
-            if (potencia > Rules.MAX_BULLET_POWER) {
-                potencia = Rules.MAX_BULLET_POWER;
-            }
-            setFire(potencia);
+            PotenciaDisparo(event);
         }
         RadarDirection *= -1;
         setTurnRadarRight(10000 * RadarDirection);
     }
 
+    //Funcion para calcular la potencia del disparo segun la distancia a la que estamos del enemigo
     public void PotenciaDisparo (ScannedRobotEvent event) {
         double distance = event.getDistance();
             if(distance<200) {
-              fire(3.5);
+              fire(Rules.MAX_BULLET_POWER);
               setBulletColor(new Color (255, 0, 0));
            }
            else if(distance<500) {
@@ -151,15 +111,16 @@ public class Atom extends AdvancedRobot {
         double cuadradoY = Math.pow(distanciaY,2); //cuadrado del cateto 2
         double h = Math.sqrt(cuadradoX + cuadradoY); //hipotensa
         double arcSin = Math.toDegrees(Math.asin(distanciaX / h));
-        double arcCos = Math.toDegrees(Math.acos(distanciaY / h));
+        //double arcCos = Math.toDegrees(Math.acos(distanciaY / h));
         double angulo = 0;
         
-        if (distanciaX > 0 && distanciaY >0)  angulo = arcSin;
-        else if (distanciaX > 0 && distanciaY < 0) angulo = arcCos;
-        else angulo = 360 - arcCos;
+        if (distanciaX> 0 && distanciaY>0)  angulo = arcSin;
+        else if (distanciaX<0 && distanciaY>0) angulo = 360+arcSin;
+        else if (distanciaX>0 && distanciaY<0) angulo=180-arcSin;
+        else if (distanciaX<0 && distanciaY<0) angulo=180-arcSin;
+        //else angulo = 360 - arcCos;
         
         return angulo;       
-         
     }
     
     //Funcion para convertir un angulo en el intervalo de -180 y 180 grados.
@@ -172,30 +133,37 @@ public class Atom extends AdvancedRobot {
         }
         return ang;
     }
+    
+
      
+    //Funcion para calcular el tiempo que tarda la bala en llegar al enemigo 
     public double TiempoBala(ScannedRobotEvent event) {
         double potencia = 500 / event.getDistance();
         if (potencia > Rules.MAX_BULLET_POWER) {
             potencia = Rules.MAX_BULLET_POWER;
         }
-        // Aplicamos formula y averiguamos la velocidad de la bala a partir de su potencia
-        double velocidad = 20 - potencia * 3;
-        // distancia = velocidad * tiempo donde aislamos el tiempo
-        return (long) (event.getDistance() / velocidad);
+        double velocity = 20 - potencia * 3;
+        return (long) (event.getDistance() / velocity);
     }
     
-    
+    public void PosicionActualEnemigo(double orientation, double distance) {
+
+        double angle = Math.toRadians(getHeading() + orientation % 360);
+
+        enemigoX = (getX() + Math.sin(angle) * distance);
+        enemigoY = (getY() + Math.cos(angle) * distance);
+    }
     //Funcion para calcular la posicion X futura del enemigo
-    public double FuturaXenemigo(double tiempo, ScannedRobotEvent e) {
-        return enemigoX + Math.sin(Math.toRadians(e.getHeading())) * e.getVelocity() * tiempo;
+    public double FuturaXenemigo(double tiempo, ScannedRobotEvent event) {
+        return enemigoX + Math.sin(Math.toRadians(event.getHeading())) * event.getVelocity() * tiempo;
     }
     
     //Funcion para calcular la posicion Y futura del enemigo
-     public double FuturaYenemigo(double tiempo, ScannedRobotEvent e) {
-        return enemigoY + Math.cos(Math.toRadians(e.getHeading())) * e.getVelocity() * tiempo;
+     public double FuturaYenemigo(double tiempo, ScannedRobotEvent event) {
+        return enemigoY + Math.cos(Math.toRadians(event.getHeading())) * event.getVelocity() * tiempo;
     }
 
-    
+    //Evento para cuando choca con la pared
     public void onHitWall(HitWallEvent event){
         if (event.getBearing() > -90 && event.getBearing() <= 90) {
            setBack(180);
@@ -203,12 +171,14 @@ public class Atom extends AdvancedRobot {
        } else {
            setAhead(180);
            setTurnLeft(180);
-       }/*
+       }
+        execute();
+        /*
         double bearing = e.getBearing(); //get the bearing of the wall
         setTurnRight(-bearing); //This isn't accurate but release your robot.
         setBack(100); //The robot goes away from the wall.
         */
-        execute();
+        
     }
     
 }
