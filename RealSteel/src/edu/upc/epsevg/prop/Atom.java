@@ -22,13 +22,17 @@ import java.awt.Color;
 public class Atom extends AdvancedRobot {
 
     //private byte scanDirection = 1;
-    private double RadarDirection;
+    private double RadarDirection = 1.0;
     private double GunDirection;
     //private int wallMargin = 80;
     //private int tooCloseToWall = 0;
     private int moveDirection = 1;
     //private boolean CloseWall = false;
     //private int AvoidWall = 0;
+    
+    private int enemigoX = 0;
+    private int enemigoY = 0;
+
     
     public void run() {
         setBodyColor(new Color(93, 193, 185));
@@ -84,8 +88,11 @@ public class Atom extends AdvancedRobot {
         RadarDirection = (getHeading() - getRadarHeading() + event.getBearing());
         setTurnRadarRight(RadarDirection); //hacemos la diferencia entre el rumbo de nuestro tanque ( getHeading () ) y el rumbo de nuestro radar ( getRadarHeading () ) y agregamos el rumbo al robot escaneado ( event.getBearing () ) 
         
-        GunDirection = (getHeading() - getGunHeading() + event.getBearing ());
-        setTurnGunRight(GunDirection);
+        //GunDirection = (getHeading() - getGunHeading() + event.getBearing ());
+        //setTurnGunRight(GunDirection);
+        Disparar(event);
+
+        //setTurnRight (event.getBearing () + 90);
         if (getGunHeat() == 0 && Math.abs (getGunTurnRemaining())<10) {
             PotenciaDisparo(event);
         }
@@ -96,6 +103,24 @@ public class Atom extends AdvancedRobot {
     public void onHitByBullet(HitByBulletEvent event) {
         setTurnLeft(180);
     } 
+    
+    public void Disparar(ScannedRobotEvent event) {
+         double tiempo = TiempoBala(event);
+         double xEnemiga = FuturaXenemigo(tiempo, event);
+         double yEnemiga = FuturaYenemigo(tiempo, event);
+         double anguloGiro = AnguloAbsolutoEnemigo(getX(), getY(), xEnemiga, yEnemiga);
+         setTurnGunRight(normalizeBearing(anguloGiro - getGunHeading()));
+         if (getGunHeat() == 0 && Math.abs(getGunTurnRemaining()) < 10) {
+            
+            double potencia = 500 / event.getDistance();
+            if (potencia > Rules.MAX_BULLET_POWER) {
+                potencia = Rules.MAX_BULLET_POWER;
+            }
+            setFire(potencia);
+        }
+        RadarDirection *= -1;
+        setTurnRadarRight(10000 * RadarDirection);
+    }
 
     public void PotenciaDisparo (ScannedRobotEvent event) {
         double distance = event.getDistance();
@@ -117,9 +142,58 @@ public class Atom extends AdvancedRobot {
               
            }
     }
-        
     
-
+    //Funcion para calcular el angulo absoluto respecto al enemigo
+    public double AnguloAbsolutoEnemigo (double xA, double yA, double xE, double yE) {
+        double distanciaX = xE-xA; //cateto 1
+        double distanciaY = yE-yA; //cateto2
+        double cuadradoX = Math.pow(distanciaX,2); //cuadrado del cateto 1
+        double cuadradoY = Math.pow(distanciaY,2); //cuadrado del cateto 2
+        double h = Math.sqrt(cuadradoX + cuadradoY); //hipotensa
+        double arcSin = Math.toDegrees(Math.asin(distanciaX / h));
+        double arcCos = Math.toDegrees(Math.acos(distanciaY / h));
+        double angulo = 0;
+        
+        if (distanciaX > 0 && distanciaY >0)  angulo = arcSin;
+        else if (distanciaX > 0 && distanciaY < 0) angulo = arcCos;
+        else angulo = 360 - arcCos;
+        
+        return angulo;       
+         
+    }
+    
+    //Funcion para convertir un angulo en el intervalo de -180 y 180 grados.
+     public double normalizeBearing(double ang) {
+        while (ang> 180) {
+            ang -= 360;
+        }
+        while (ang< -180) {
+            ang+= 360;
+        }
+        return ang;
+    }
+     
+    public double TiempoBala(ScannedRobotEvent event) {
+        double potencia = 500 / event.getDistance();
+        if (potencia > Rules.MAX_BULLET_POWER) {
+            potencia = Rules.MAX_BULLET_POWER;
+        }
+        // Aplicamos formula y averiguamos la velocidad de la bala a partir de su potencia
+        double velocidad = 20 - potencia * 3;
+        // distancia = velocidad * tiempo donde aislamos el tiempo
+        return (long) (event.getDistance() / velocidad);
+    }
+    
+    
+    //Funcion para calcular la posicion X futura del enemigo
+    public double FuturaXenemigo(double tiempo, ScannedRobotEvent e) {
+        return enemigoX + Math.sin(Math.toRadians(e.getHeading())) * e.getVelocity() * tiempo;
+    }
+    
+    //Funcion para calcular la posicion Y futura del enemigo
+     public double FuturaYenemigo(double tiempo, ScannedRobotEvent e) {
+        return enemigoY + Math.cos(Math.toRadians(e.getHeading())) * e.getVelocity() * tiempo;
+    }
 
     
     public void onHitWall(HitWallEvent event){
