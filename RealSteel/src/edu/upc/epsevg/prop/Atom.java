@@ -23,7 +23,6 @@ import java.awt.geom.Rectangle2D;
 public class Atom extends AdvancedRobot {
 
     private byte RadarDirection = 1;
-
     private byte moveDirection = 1;
     private double enemigoX = 0;
     private double enemigoY = 0;
@@ -33,7 +32,6 @@ public class Atom extends AdvancedRobot {
     private double desplazamientoX;
     private boolean Wall=false;
     private int CloseWall=0;
-
     
     public void run() {
         setTurnLeft(getHeading());
@@ -46,7 +44,6 @@ public class Atom extends AdvancedRobot {
         
         while(true) {
           setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
-           //moviment();
            setTurnRadarRight (360);        //girar el radar 360
            execute(); 
             
@@ -55,103 +52,31 @@ public class Atom extends AdvancedRobot {
 
     //Evento para cuando detectamos el robot
     public void onScannedRobot(ScannedRobotEvent event) {
-        setBodyColor(new Color(0,0 , 0));
         if(event.getName() == "Crazy") setTurnRight(event.getBearing()); //Perseguir al robot enemigo
         else setTurnRight(event.getBearing() + 90 - (20 * moveDirection)); //Perseguir al robot enemigo
-        //setTurnRight(event.getBearing() + 90 - (20 * moveDirection)); //Perseguir al robot enemigo
         setTurnRadarRight(getHeading() - getRadarHeading() + event.getBearing()); //hacemos la diferencia entre el rumbo de nuestro tanque ( getHeading () ) y el rumbo de nuestro radar ( getRadarHeading () ) y agregamos el rumbo al robot escaneado ( event.getBearing () ) 
-        Disparar(event);
+        DispararEnemigo(event);
         execute();
     }
     
     //Evento para cuando choca con una bala
     public void onHitByBullet(HitByBulletEvent event) {
-        setBodyColor(new Color(0,0 , 255));
         setStop(true);
         setAhead(1000*moveDirection);
-        //setTurnLeft(90);
         execute();
         
     } 
     
     //Evento para cuando choca con la pared
     public void onHitWall(HitWallEvent event){
-        /*
-        if (event.getBearing() > -90 && event.getBearing() <= 90) {
-           setBack(180);
-           setTurnLeft(180);
-       } else {
-           setAhead(180);
-           setTurnLeft(180);
-       }
-        */
         moveDirection *= -1;
-        //execute();
-        /*
-        double bearing = e.getBearing(); //get the bearing of the wall
-        setTurnRight(-bearing); //This isn't accurate but release your robot.
-        setBack(100); //The robot goes away from the wall.
-        */   
     }
-
-   
-   //Funcion para detectar si estas cerca de una pared
-    public boolean NearWall (int m) {
-        double alturaTablero = getBattleFieldHeight();
-        double anchuraTablero = getBattleFieldWidth();
-
-        if (getX() <= m) {
-            Wall=true;
-            //setAllColors(new Color(255, 0, 0));
-        }
-        else if (getX() >= anchuraTablero-m) {
-            Wall=true;
-            //setAllColors(new Color(255, 0, 0));
-        }
-        else if (getY() <= m) {
-            Wall=true;
-            //setAllColors(new Color(255, 0, 0));
-        }
-        else if (getY() >= alturaTablero-m) {
-            Wall=true;
-            //setAllColors(new Color(255, 0, 0));
-        }
-        else {
-            Wall=false;
-            setBodyColor(new Color(93, 193, 185));
-            setGunColor(new Color (247, 191, 190));
-            setRadarColor(new Color (255, 255, 255));
-        }
-        return Wall;
-    }
-     //Funcion para movernos de una forma determinada
-    public void moviment() {
-        if(NearWall(margin)){
-            CloseWall++;
-            if(CloseWall == 1) moveDirection*=-1;
-            setTurnRight(getHeading());
-            setBodyColor(new Color(255, 0, 0));
-        }
-        if(!NearWall(innerSquare)){
-            setBodyColor(new Color(0, 255, 0));
-            CloseWall = 0;
-        }
-        setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
-        /*
-        if (CloseWall <= 0 && NearWall(margin)==true) {
-            // if we weren't already dealing with the walls, we are now
-            CloseWall += margin;
-            moveDirection*=-1;
-            setAhead(10000 * moveDirection);
-        }
-        else if (CloseWall > 0) CloseWall--;
-*/
-    }
-    
+  
     
     //Funcion que permite diparar teniendo en cuenta la posicion futura del enemigo
-    public void Disparar(ScannedRobotEvent event) {
-         double time = TiempoBala(event);
+    public void DispararEnemigo(ScannedRobotEvent event) {
+         double potencia = PotenciaDisparo(event);
+         double time = TiempoBala(event, potencia);
          PosicionActualEnemigo(event.getBearing(), event.getDistance()); 
          double xEnemiga = enemigoX + Math.sin(Math.toRadians(event.getHeading())) * event.getVelocity() * time; //calcular la posicion X futura del enemigo
          double yEnemiga = enemigoY + Math.cos(Math.toRadians(event.getHeading())) * event.getVelocity() * time; //calcular la posicion Y futura del enemigo
@@ -165,29 +90,36 @@ public class Atom extends AdvancedRobot {
     }
 
     //Funcion para calcular la potencia del disparo segun la distancia a la que estamos del enemigo
-    public void PotenciaDisparo (ScannedRobotEvent event) {
+    public double PotenciaDisparo (ScannedRobotEvent event) {
         double distance = event.getDistance(); //obtener la distancia respecto al enemigo
+        double potencia;
             //Si la distancia en menor a 200 pixeles disparamos con la maxima potencia y la bala sera de color rojo
-            if(distance<200) {
-              fire(Rules.MAX_BULLET_POWER);
+            if(distance<100) {
+              potencia=Rules.MAX_BULLET_POWER;
+              fire(potencia);
               setBulletColor(new Color (255, 0, 0));
+              
            }
             //Si la distancia en menor a 500 pixeles disparamos con la una potencia de 3.5 y la bala sera de color naranja
-           else if(distance<500) {
-              fire(2.5);
+           else if(distance<300) {
+              potencia=2.0;
+              fire(potencia);
               setBulletColor(new Color (255, 128, 0));
            }
             //Si la distancia en menor a 800 pixeles disparamos con la una potencia de 1.5 y la bala sera de color amarillo
-           else if(distance<800) {
-              fire(1.5);
+           else if(distance<900) {
+              potencia=1.0;
+              fire(potencia);
               setBulletColor(new Color (255, 233, 0));
            }
             //Si la distancia es superior a 800 pixeles disparamos con la una potencia de 0.5 y la bala sera de color blanco
            else {
-              fire(0.5);
+              potencia=0.5;
+              fire(potencia);
               setBulletColor(new Color (255, 255, 255));
               
            }
+            return potencia;
     }
     
     //Funcion para calcular el angulo absoluto respecto al enemigo
@@ -218,13 +150,8 @@ public class Atom extends AdvancedRobot {
     
      
     //Funcion para calcular el tiempo que tarda la bala en llegar al enemigo 
-    public double TiempoBala(ScannedRobotEvent event) {
+    public double TiempoBala(ScannedRobotEvent event, double potencia) {
         double distance = event.getDistance(); //obtener la distancia respecto al enemigo
-        double potencia = 500 / distance; //calcular la potencia de la bala
-        //Si la potencia es superior a la maxima, diremos que es la maxima
-        if (potencia > Rules.MAX_BULLET_POWER) {
-            potencia = Rules.MAX_BULLET_POWER;
-        }
         double velocity = 20 - potencia * 3; //calcular la velocidad de la bala
         long time = (long)(distance / velocity); //calcular el tiempo que tarda em llegar la bala
         return time;
