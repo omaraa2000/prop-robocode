@@ -8,6 +8,7 @@ import robocode.Rules;
 import robocode.ScannedRobotEvent;
 import robocode.*;
 import java.awt.Color;
+import java.awt.geom.Rectangle2D;
 
 
 /*
@@ -26,9 +27,12 @@ public class Atom extends AdvancedRobot {
     private byte moveDirection = 1;
     private double enemigoX = 0;
     private double enemigoY = 0;
-    private int margin = 60;
-    double desplazamientoY;
-    double desplazamientoX;
+    private int margin = 80;
+    private int innerSquare = margin + 80;
+    private double desplazamientoY;
+    private double desplazamientoX;
+    private boolean Wall=false;
+    private int CloseWall=0;
 
     
     public void run() {
@@ -41,8 +45,8 @@ public class Atom extends AdvancedRobot {
         setRadarColor(new Color (255, 255, 255));
         
         while(true) {
-           setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
-          // moviment();
+          setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
+           //moviment();
            setTurnRadarRight (360);        //girar el radar 360
            execute(); 
             
@@ -51,7 +55,10 @@ public class Atom extends AdvancedRobot {
 
     //Evento para cuando detectamos el robot
     public void onScannedRobot(ScannedRobotEvent event) {
-        setTurnRight(event.getBearing() + 90 - (20 * moveDirection)); //Perseguir al robot enemigo
+        setBodyColor(new Color(0,0 , 0));
+        if(event.getName() == "Crazy") setTurnRight(event.getBearing()); //Perseguir al robot enemigo
+        else setTurnRight(event.getBearing() + 90 - (20 * moveDirection)); //Perseguir al robot enemigo
+        //setTurnRight(event.getBearing() + 90 - (20 * moveDirection)); //Perseguir al robot enemigo
         setTurnRadarRight(getHeading() - getRadarHeading() + event.getBearing()); //hacemos la diferencia entre el rumbo de nuestro tanque ( getHeading () ) y el rumbo de nuestro radar ( getRadarHeading () ) y agregamos el rumbo al robot escaneado ( event.getBearing () ) 
         Disparar(event);
         execute();
@@ -59,12 +66,17 @@ public class Atom extends AdvancedRobot {
     
     //Evento para cuando choca con una bala
     public void onHitByBullet(HitByBulletEvent event) {
+        setBodyColor(new Color(0,0 , 255));
+        setStop(true);
         setAhead(1000*moveDirection);
-        setTurnLeft(90);
+        //setTurnLeft(90);
+        execute();
+        
     } 
     
     //Evento para cuando choca con la pared
     public void onHitWall(HitWallEvent event){
+        /*
         if (event.getBearing() > -90 && event.getBearing() <= 90) {
            setBack(180);
            setTurnLeft(180);
@@ -72,26 +84,70 @@ public class Atom extends AdvancedRobot {
            setAhead(180);
            setTurnLeft(180);
        }
-        execute();
+        */
+        moveDirection *= -1;
+        //execute();
         /*
         double bearing = e.getBearing(); //get the bearing of the wall
         setTurnRight(-bearing); //This isn't accurate but release your robot.
         setBack(100); //The robot goes away from the wall.
-        */
-        
+        */   
     }
 
-    //Funcion para movernos de una forma determinada
-    public void moviment () { 
-        /*
-        desplazamientoY = (getBattleFieldHeight()-getY()- margin*moveDirection);
-        setAhead(desplazamientoY);
-        desplazamientoX = (getBattleFieldWidth()-(getX()+ margin)*moveDirection);
-        setAhead(desplazamientoX);
-        setTurnRight(45);
-        */
-        //setAhead(1000 * moveDirection);
+   
+   //Funcion para detectar si estas cerca de una pared
+    public boolean NearWall (int m) {
+        double alturaTablero = getBattleFieldHeight();
+        double anchuraTablero = getBattleFieldWidth();
+
+        if (getX() <= m) {
+            Wall=true;
+            //setAllColors(new Color(255, 0, 0));
+        }
+        else if (getX() >= anchuraTablero-m) {
+            Wall=true;
+            //setAllColors(new Color(255, 0, 0));
+        }
+        else if (getY() <= m) {
+            Wall=true;
+            //setAllColors(new Color(255, 0, 0));
+        }
+        else if (getY() >= alturaTablero-m) {
+            Wall=true;
+            //setAllColors(new Color(255, 0, 0));
+        }
+        else {
+            Wall=false;
+            setBodyColor(new Color(93, 193, 185));
+            setGunColor(new Color (247, 191, 190));
+            setRadarColor(new Color (255, 255, 255));
+        }
+        return Wall;
     }
+     //Funcion para movernos de una forma determinada
+    public void moviment() {
+        if(NearWall(margin)){
+            CloseWall++;
+            if(CloseWall == 1) moveDirection*=-1;
+            setTurnRight(getHeading());
+            setBodyColor(new Color(255, 0, 0));
+        }
+        if(!NearWall(innerSquare)){
+            setBodyColor(new Color(0, 255, 0));
+            CloseWall = 0;
+        }
+        setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
+        /*
+        if (CloseWall <= 0 && NearWall(margin)==true) {
+            // if we weren't already dealing with the walls, we are now
+            CloseWall += margin;
+            moveDirection*=-1;
+            setAhead(10000 * moveDirection);
+        }
+        else if (CloseWall > 0) CloseWall--;
+*/
+    }
+    
     
     //Funcion que permite diparar teniendo en cuenta la posicion futura del enemigo
     public void Disparar(ScannedRobotEvent event) {
