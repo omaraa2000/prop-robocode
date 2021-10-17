@@ -26,7 +26,6 @@ public class Atom extends AdvancedRobot {
     private byte moveDirection = 1;
     private double enemigoX = 0;
     private double enemigoY = 0;
-
     
     public void run() {
         setTurnLeft(getHeading());
@@ -77,7 +76,7 @@ public class Atom extends AdvancedRobot {
          double anguloGiro = AnguloAbsolutoEnemigo(getX(), getY(), xEnemiga, yEnemiga);
          setTurnGunRight(normalizeBearing(anguloGiro - getGunHeading()));
          if (getGunHeat() == 0 && Math.abs(getGunTurnRemaining()) < 10) {
-            PotenciaDisparo(event);
+            fire(potencia);
         }
         RadarDirection *= -1;
         setTurnRadarRight(10000 * RadarDirection);
@@ -90,26 +89,22 @@ public class Atom extends AdvancedRobot {
             //Si la distancia en menor a 100 pixeles disparamos con la maxima potencia y la bala sera de color rojo
             if(distance<100) {
               potencia=Rules.MAX_BULLET_POWER;
-              fire(potencia);
               setBulletColor(new Color (255, 0, 0));
               
            }
-            //Si la distancia en menor a 300 pixeles disparamos con la una potencia de 3.5 y la bala sera de color naranja
+            //Si la distancia en menor a 300 pixeles disparamos con la una potencia de 2.0 y la bala sera de color naranja
            else if(distance<300) {
               potencia=2.0;
-              fire(potencia);
               setBulletColor(new Color (255, 128, 0));
            }
-            //Si la distancia en menor a 900 pixeles disparamos con la una potencia de 1.5 y la bala sera de color amarillo
+            //Si la distancia en menor a 900 pixeles disparamos con la una potencia de 1.0 y la bala sera de color amarillo
            else if(distance<900) {
               potencia=1.0;
-              fire(potencia);
               setBulletColor(new Color (255, 233, 0));
            }
             //Si la distancia es superior a 900 pixeles disparamos con la una potencia de 0.5 y la bala sera de color blanco
            else {
               potencia=0.5;
-              fire(potencia);
               setBulletColor(new Color (255, 255, 255));
               
            }
