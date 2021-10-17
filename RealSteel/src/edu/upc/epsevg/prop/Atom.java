@@ -26,24 +26,19 @@ public class Atom extends AdvancedRobot {
     private byte moveDirection = 1;
     private double enemigoX = 0;
     private double enemigoY = 0;
-    private int margin = 80;
-    private int innerSquare = margin + 80;
-    private double desplazamientoY;
-    private double desplazamientoX;
-    private boolean Wall=false;
-    private int CloseWall=0;
+
     
     public void run() {
         setTurnLeft(getHeading());
-        setAdjustGunForRobotTurn (true);       //activamos el cañon del robot
-        setAdjustRadarForRobotTurn(true);      //activamos el radar del robot
+        setAdjustGunForRobotTurn (true);       //activamos el cañon del robot indepenciente del robot
+        setAdjustRadarForRobotTurn(true);      //activamos el radar del robot indepenciente del robot
         
-        setBodyColor(new Color(93, 193, 185));
-        setGunColor(new Color (247, 191, 190));
-        setRadarColor(new Color (255, 255, 255));
+        setBodyColor(new Color(93, 193, 185)); //Color del tanque turquesa
+        setGunColor(new Color (247, 191, 190)); //color del cañon rosa
+        setRadarColor(new Color (255, 255, 255)); //color del radar blanco
         
         while(true) {
-          setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
+           setAhead(1000 * moveDirection);    //hacer que se mueva hacia adelante
            setTurnRadarRight (360);        //girar el radar 360
            execute(); 
             
@@ -52,8 +47,8 @@ public class Atom extends AdvancedRobot {
 
     //Evento para cuando detectamos el robot
     public void onScannedRobot(ScannedRobotEvent event) {
-        if(event.getName() == "Crazy") setTurnRight(event.getBearing()); //Perseguir al robot enemigo
-        else setTurnRight(event.getBearing() + 90 - (20 * moveDirection)); //Perseguir al robot enemigo
+        if(event.getName() == "Crazy") setTurnRight(event.getBearing()); // Si el enemigo es el Crazy lo perseguimos de muy cerca
+        else setTurnRight(event.getBearing() + 90 - (20 * moveDirection)); //Perseguir al robot enemigo con una distancia prudente siempre que no sea Crazy
         setTurnRadarRight(getHeading() - getRadarHeading() + event.getBearing()); //hacemos la diferencia entre el rumbo de nuestro tanque ( getHeading () ) y el rumbo de nuestro radar ( getRadarHeading () ) y agregamos el rumbo al robot escaneado ( event.getBearing () ) 
         DispararEnemigo(event);
         execute();
@@ -71,7 +66,6 @@ public class Atom extends AdvancedRobot {
     public void onHitWall(HitWallEvent event){
         moveDirection *= -1;
     }
-  
     
     //Funcion que permite diparar teniendo en cuenta la posicion futura del enemigo
     public void DispararEnemigo(ScannedRobotEvent event) {
@@ -93,26 +87,26 @@ public class Atom extends AdvancedRobot {
     public double PotenciaDisparo (ScannedRobotEvent event) {
         double distance = event.getDistance(); //obtener la distancia respecto al enemigo
         double potencia;
-            //Si la distancia en menor a 200 pixeles disparamos con la maxima potencia y la bala sera de color rojo
+            //Si la distancia en menor a 100 pixeles disparamos con la maxima potencia y la bala sera de color rojo
             if(distance<100) {
               potencia=Rules.MAX_BULLET_POWER;
               fire(potencia);
               setBulletColor(new Color (255, 0, 0));
               
            }
-            //Si la distancia en menor a 500 pixeles disparamos con la una potencia de 3.5 y la bala sera de color naranja
+            //Si la distancia en menor a 300 pixeles disparamos con la una potencia de 3.5 y la bala sera de color naranja
            else if(distance<300) {
               potencia=2.0;
               fire(potencia);
               setBulletColor(new Color (255, 128, 0));
            }
-            //Si la distancia en menor a 800 pixeles disparamos con la una potencia de 1.5 y la bala sera de color amarillo
+            //Si la distancia en menor a 900 pixeles disparamos con la una potencia de 1.5 y la bala sera de color amarillo
            else if(distance<900) {
               potencia=1.0;
               fire(potencia);
               setBulletColor(new Color (255, 233, 0));
            }
-            //Si la distancia es superior a 800 pixeles disparamos con la una potencia de 0.5 y la bala sera de color blanco
+            //Si la distancia es superior a 900 pixeles disparamos con la una potencia de 0.5 y la bala sera de color blanco
            else {
               potencia=0.5;
               fire(potencia);
@@ -124,19 +118,22 @@ public class Atom extends AdvancedRobot {
     
     //Funcion para calcular el angulo absoluto respecto al enemigo
     public double AnguloAbsolutoEnemigo (double xA, double yA, double xE, double yE) {
-        double distanciaX = xE-xA; //cateto 1
-        double distanciaY = yE-yA; //cateto2
-        double cuadradoX = Math.pow(distanciaX,2); //cuadrado del cateto 1
-        double cuadradoY = Math.pow(distanciaY,2); //cuadrado del cateto 2
+        //Calculo de la hipotenusa
+        double Cateto1 = xE-xA; //cateto 1
+        double Cateto2 = yE-yA; //cateto2
+        double cuadradoX = Math.pow(Cateto1,2); //cuadrado del cateto 1
+        double cuadradoY = Math.pow(Cateto2,2); //cuadrado del cateto 2
         double h = Math.sqrt(cuadradoX + cuadradoY); //hipotensa
-        double arcSinRadians =(Math.asin(distanciaX / h)); //calculo del arcoseno en radianes
-        double arcSinGrados = Math.toDegrees(arcSinRadians); //cpnversion del arcoseno en grados
+        
+        //Calculo del arcoseno
+        double arcSinRadians =(Math.asin(Cateto1 / h)); //calculo del arcoseno en radianes
+        double arcSinGrados = Math.toDegrees(arcSinRadians); //conversion del arcoseno en grados
         double angulo = 0;
         
-        if (distanciaX> 0 && distanciaY>0)  angulo = arcSinGrados;
-        else if (distanciaX<0 && distanciaY>0) angulo = 360+arcSinGrados;
-        else if (distanciaX>0 && distanciaY<0) angulo=180-arcSinGrados;
-        else if (distanciaX<0 && distanciaY<0) angulo=180-arcSinGrados;
+        if (Cateto1> 0 && Cateto2>0)  angulo = arcSinGrados;
+        else if (Cateto1<0 && Cateto2>0) angulo = 360+arcSinGrados;
+        else if (Cateto1>0 && Cateto2<0) angulo=180-arcSinGrados;
+        else if (Cateto1<0 && Cateto2<0) angulo=180-arcSinGrados;
         
         return angulo;       
     }
