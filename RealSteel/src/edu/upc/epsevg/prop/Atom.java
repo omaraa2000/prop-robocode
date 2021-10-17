@@ -78,8 +78,6 @@ public class Atom extends AdvancedRobot {
          if (getGunHeat() == 0 && Math.abs(getGunTurnRemaining()) < 10) {
             fire(potencia);
         }
-        RadarDirection *= -1;
-        setTurnRadarRight(10000 * RadarDirection);
     }
 
     //Funcion para calcular la potencia del disparo segun la distancia a la que estamos del enemigo
