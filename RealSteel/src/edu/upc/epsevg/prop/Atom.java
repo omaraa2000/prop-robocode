@@ -27,6 +27,11 @@ public class Atom extends AdvancedRobot {
     private double enemigoX = 0;
     private double enemigoY = 0;
     
+    /**
+     * Funcionamiento principal del robot: Movemos el robot hacia delante y giramos
+     * el radar 360º constantemente.
+     */
+    
     public void run() {
         setTurnLeft(getHeading());
         setAdjustGunForRobotTurn (true);       //activamos el cañon del robot indepenciente del robot
@@ -43,6 +48,14 @@ public class Atom extends AdvancedRobot {
             
         }
     }
+    
+    /**
+     * Cuando detectamos un robot enemigo enfocamos el radar hacia el y miramos 
+     * si el enemigo es Crazy o otro. Si es crazy lo seguimos de cerca y si no lo 
+     * seguimos en dirección perpendicular a él con un poco de desviamiento y en 
+     * los dos casos disparamos.
+     * @param event Es el robot escaneado.
+     */
 
     //Evento para cuando detectamos el robot
     public void onScannedRobot(ScannedRobotEvent event) {
@@ -53,6 +66,12 @@ public class Atom extends AdvancedRobot {
         execute();
     }
     
+    /**
+     * En caso de que una bala nos alcance paramos lo que estamos haciendo y seguimos 
+     * hacia delante.
+     * @param event Es la bala que nos toca.
+     */
+    
     //Evento para cuando choca con una bala
     public void onHitByBullet(HitByBulletEvent event) {
         setStop(true);
@@ -61,11 +80,26 @@ public class Atom extends AdvancedRobot {
         
     } 
     
+    /**
+     * En caso de chocar con una pared cambiamos el sentido de nuestro rumbo.
+     * @param event Es la pared con la que chocamos.
+     */
+    
     //Evento para cuando choca con la pared
     public void onHitWall(HitWallEvent event){
         moveDirection *= -1;
     }
     
+    /**
+     * Se encarga de disparar al enemigo calculando la posición futura indicando 
+     * la potencia.
+     * Para calcular la posición futura necesitamos el tiempo que tarda la bala 
+     * en llegar y la posición actual del enemigo. Sabiendo esto podemos calcular 
+     * el angulo en el cual tenemos que disparar y lo haremos siempre y cuando el
+     * arma no este demasiado caliente y nos aseguremos que estamos apuntando donde 
+     * queremos disparar.
+     * @param event Indica el robot escaneado.
+     */
     //Funcion que permite diparar teniendo en cuenta la posicion futura del enemigo
     public void DispararEnemigo(ScannedRobotEvent event) {
          double potencia = PotenciaDisparo(event);
@@ -80,6 +114,19 @@ public class Atom extends AdvancedRobot {
         }
     }
 
+    /**
+     * Nos indica la potencia con la cual disparamos segun a la distancia a la que estamos.<br>
+     * Si estamos a una distencia menor de 100 pixeles dispara con la maxima potencia 
+     * y las balas son de color rojo.<br>
+     * Si estamos a menos de 300 pixeles disparamos con una potencia de 2.0 y la 
+     * bala es de color naranja.<br>
+     * Si estamos a menos de 900 pixeles disparamos con una potencia de 1.0 y la
+     * bala es de color amarillo.<br>
+     * En los demas casos disparamos con una potencia de 0.5 y la bala es de color blanca.
+     * @param event Nos indica el robot escaneado.
+     * @return Nos devuelve la potencia del disparo.
+     */
+    
     //Funcion para calcular la potencia del disparo segun la distancia a la que estamos del enemigo
     public double PotenciaDisparo (ScannedRobotEvent event) {
         double distance = event.getDistance(); //obtener la distancia respecto al enemigo
@@ -109,6 +156,21 @@ public class Atom extends AdvancedRobot {
             return potencia;
     }
     
+    /**
+     * Calcula el angulo absoluto repecto nuestra posiciom actual y la posicion 
+     * futura del enemigo.
+     * Para calcular el angulo necesitaremos saber cual es la hipotenusa y hacer 
+     * el arcoseno de ella.
+     * Una vez tenemos el arcoseno calculado el ángulo dependerá de la diferencia 
+     * de nuestra posición con la del enemigo.
+     * @param xA Nuestra posicion X actual
+     * @param yA Nuestra posicion Y actual
+     * @param xE Futura posición X del enemigo
+     * @param yE Futura posición Y del enemigo
+     * @return Devuelve el angulo absoluto entre nuestra posición actual y la posicion 
+     * futura del enemigo.
+     */
+    
     //Funcion para calcular el angulo absoluto respecto al enemigo
     public double AnguloAbsolutoEnemigo (double xA, double yA, double xE, double yE) {
         //Calculo de la hipotenusa
@@ -131,6 +193,12 @@ public class Atom extends AdvancedRobot {
         return angulo;       
     }
     
+    /**
+     * Hace que el angulo este en el intervalo de -180 a 180.
+     * @param bearing Es el angulo que queremos convertir
+     * @return Devuelve la conversion del angulo
+     */
+    
     //Funcion para hacer que el angulo este en el intervalo de -180 y 180 grados.
      public double normalizeBearing(double bearing) {
         while (bearing> 180) bearing -= 360;   
@@ -138,7 +206,18 @@ public class Atom extends AdvancedRobot {
         return bearing;
     }
     
-     
+     /**
+      * Calcula el tiempo que tarda la bala en llegar al enemigo. Para ello 
+      * necesitamos tener la distancia a la que estamos del enemigo y la velocidad 
+      * de la bala. 
+      * La distancia la obtenemos con el metodo getDistance(), y la velocidad se 
+      * calcula segun la potencia v = 20-potencia*3.
+      * Una vez tenemos esta información dividimos la distancia entre la velocidad 
+      * para tener el tiempo.
+      * @param event Nos indica el robot enemigo escaneado.
+      * @param potencia Nos indica la potencia de la bala.
+      * @return Devuelve el tiempo calculado que tarda la bala en llegar al enemigo.
+      */
     //Funcion para calcular el tiempo que tarda la bala en llegar al enemigo 
     public double TiempoBala(ScannedRobotEvent event, double potencia) {
         double distance = event.getDistance(); //obtener la distancia respecto al enemigo
@@ -146,6 +225,18 @@ public class Atom extends AdvancedRobot {
         long time = (long)(distance / velocity); //calcular el tiempo que tarda em llegar la bala
         return time;
     }
+    
+    /**
+     * Nos indica cual es la posicion actual del enemigo, y para ello necesitamos 
+     * saber el ángulo actual entre nosotros y el robot enemigo. 
+     * Para calcular el angulo necesitaremos saber nuestro rumbo y el rumbo de 
+     * nuestro enemigo, si sumamos estos dos valores aplicando un modulo de 360 
+     * podremos saber el angulo actual. 
+     * Sabiendo el angulo podemos saber las coordenadas aplicando seno para la X 
+     * y coseno para la Y.
+     * @param orientation Indicamos el rumbo de nuestro enemigo que obtenemos con el metodo getBearing().
+     * @param distance Indicamos la distancia que tenemos respecto a nuestro enemigo.
+     */
     
     //Funcion para saber la posicion actual del enemigo
     public void PosicionActualEnemigo(double orientation, double distance) {
