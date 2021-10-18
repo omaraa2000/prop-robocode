@@ -22,7 +22,6 @@ import java.awt.geom.Rectangle2D;
  */
 public class Atom extends AdvancedRobot {
 
-    private byte RadarDirection = 1;
     private byte moveDirection = 1;
     private double enemigoX = 0;
     private double enemigoY = 0;
